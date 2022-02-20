@@ -2,9 +2,7 @@ package controller
 
 import (
 	"HAMILTON_FIBER_API/database"
-	"HAMILTON_FIBER_API/entity"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/gofiber/fiber"
@@ -13,27 +11,35 @@ import (
 )
 
 func DepositOrWithdrawl(c *fiber.Ctx, track bool) {
-
-	_, err := database.GetMongoDbCollection("TEST1", "User")
+	var balance int32
+	col, err := database.GetMongoDbCollection("TEST1", "User")
 	fmt.Println("1")
 	if err != nil {
 		c.Status(500).Send(err)
 		return
 	}
 
-	var user entity.User
-	objID, _ := primitive.ObjectIDFromHex(c.Params("id"))
-	update := bson.M{
-		"$set": person,
-	}
-	res, err := collection.UpdateOne(context.Background(), bson.M{"_id": objID}, update)
-	if err != nil {
-		c.Status(500).Send(err)
-		return
-	}
-	
+	id := c.Params("ID")
+	objID, err := primitive.ObjectIDFromHex(id)
+	filter := bson.M{"_id": bson.M{"$eq": objID}}
 
-	
-	response, _ := json.Marshal(res)
-	c.Send(response)
+	if err != nil {
+		fmt.Println("ObjectIDFromHex ERROR", err)
+	} else {
+		fmt.Println("ObjectIDFromHex:", objID)
+	}
+	if track {
+		balance += int32(objID[balance])
+	}
+	if !track {
+		balance -= int32(objID[balance])
+	}
+	update := bson.M{"$set": bson.M{"balance": balance}}
+	result, _ := col.UpdateOne(
+		context.Background(),
+		filter,
+		update,
+	)
+
+	c.Send(result)
 }
